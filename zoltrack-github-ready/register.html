@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account - ZolTrack</title>
+    <link rel="icon" href="/favicon.ico?v=zoltrack-v9-final" sizes="any">
+    <link rel="icon" type="image/png" href="/assets/favicon-64.png?v=zoltrack-v9-final" sizes="64x64">
+    <link rel="icon" type="image/svg+xml" href="/assets/zoltrack-logo.svg?v=zoltrack-v9-final">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/database.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="registration-page" class="auth-container">
+        <div class="auth-box">
+            <div class="auth-header">
+                <div class="logo">
+                    <img class="brand-logo-img" src="assets/zoltrack-logo.svg" alt="ZolTrack Logo">
+                    <h1>ZolTrack</h1>
+                </div>
+                <h2>Create Your Account</h2>
+                <p>Join the school maintenance and asset management system</p>
+            </div>
+            
+            <form id="registration-form">
+                <div class="form-group">
+                    <label for="reg-fullname">Full Name</label>
+                    <input type="text" class="form-control" id="reg-fullname" placeholder="Enter your full name" required>
+                </div>
+                <div class="form-group">
+                    <label for="reg-email">Email Address</label>
+                    <input type="email" class="form-control" id="reg-email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="reg-username">Username</label>
+                    <input type="text" class="form-control" id="reg-username" placeholder="Choose a username" required>
+                </div>
+                <div class="form-group">
+    <label for="reg-password">Password</label>
+    <div style="position: relative;">
+        <input type="password" class="form-control" id="reg-password" placeholder="Create a password" required>
+        <i id="toggleRegPassword" class="far fa-eye" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888;"></i>
+    </div>
+    <div id="password-strength" style="margin-top: 10px;">
+        <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+            <div id="strength-bar-1" class="strength-bar" style="height: 4px; flex: 1; background: #333; border-radius: 2px;"></div>
+            <div id="strength-bar-2" class="strength-bar" style="height: 4px; flex: 1; background: #333; border-radius: 2px;"></div>
+            <div id="strength-bar-3" class="strength-bar" style="height: 4px; flex: 1; background: #333; border-radius: 2px;"></div>
+            <div id="strength-bar-4" class="strength-bar" style="height: 4px; flex: 1; background: #333; border-radius: 2px;"></div>
+        </div>
+        <div id="strength-text" style="font-size: 12px; color: #888;">Password strength: <span id="strength-value">Enter password</span></div>
+        <div id="strength-requirements" style="font-size: 11px; color: #666; margin-top: 8px;">
+            <span id="req-length">❌</span> At least 6 characters<br>
+            <span id="req-number">❌</span> At least 1 number<br>
+            <span id="req-upper">❌</span> At least 1 uppercase letter<br>
+            <span id="req-lower">❌</span> At least 1 lowercase letter<br>
+            <span id="req-symbol">❌</span> At least 1 symbol (@$!%*?&)
+        </div>
+    </div>
+</div>
+                <div class="form-group">
+                    <label>Access Level</label>
+                    <input type="hidden" id="role-user" name="user-role" value="user" checked>
+                    <div class="role-selection">
+                        <div class="role-option selected" style="cursor: default;">
+                            <div class="role-title">User</div>
+                            <div class="role-description">Faculty, Staff, or Class Representative — submit and track maintenance requests.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group" style="padding:14px 16px;border:1px solid #2a3038;border-radius:10px;background:#11161d;">
+                    <strong style="display:block;margin-bottom:6px;">Verification after email confirmation</strong>
+                    <small class="form-text">After confirming your email, sign in once to securely upload your ID, faculty card, or student ID for Super Admin review.</small>
+                </div>
+                <button type="submit" class="btn btn-block">Create Account</button>
+                <div class="auth-switch">
+                    Already have an account? <a href="#" id="go-to-login">Sign In</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script src="js/main.js"></script>
+    <script src="js/email-confirmation.js"></script>
+    <script src="js/auth.js"></script>
+</body>
+</html>

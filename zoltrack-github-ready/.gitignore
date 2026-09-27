@@ -1,0 +1,18 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local/private configuration
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs / temp
+*.log
+*.tmp
+
+# Archives
+*.zip

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZolTrack - Maintenance System</title>
+    <link rel="icon" href="/favicon.ico?v=zoltrack-v9-final" sizes="any">
+    <link rel="icon" type="image/png" href="/assets/favicon-64.png?v=zoltrack-v9-final" sizes="64x64">
+    <link rel="icon" type="image/svg+xml" href="/assets/zoltrack-logo.svg?v=zoltrack-v9-final">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/database.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="landing-page" class="landing-container">
+    <div class="landing-nav">
+        <div class="landing-logo">
+            <img class="landing-logo-img" src="assets/zoltrack-logo.svg" alt="ZolTrack Logo">
+            <h2>ZolTrack</h2>
+        </div>
+        <div class="landing-buttons">
+            <button class="btn btn-outline" id="landing-login-btn">Login</button>
+            <button class="btn btn-primary" id="landing-register-btn">Get Started</button>
+        </div>
+    </div>
+    
+    <div class="landing-hero">
+        <div class="landing-hero-content">
+            <h1>Maintenance Management<br><span class="highlight">Made Simple</span></h1>
+            <p>ZolTrack is a web-based maintenance and asset management system for school facilities.
+               Submit, track, and manage maintenance requests, assets, and inventory efficiently.</p>
+            <div class="landing-buttons-hero">
+                <button class="btn btn-primary" id="hero-register-btn">Create Account</button>
+                <button class="btn btn-outline" id="hero-login-btn">Sign In</button>
+            </div>
+        </div>
+        <div class="landing-hero-image">
+            <div class="hero-icon">
+                <img class="hero-icon-img" src="assets/zoltrack-logo.svg" alt="ZolTrack Logo">
+            </div>
+        </div>
+    </div>
+    
+    <div class="landing-features">
+        <h2>Key Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📋</div>
+                <h3>Submit Requests</h3>
+                <p>Easily submit maintenance requests for classrooms and facilities</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Track Status</h3>
+                <p>Monitor your requests from pending to completion</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📦</div>
+                <h3>Inventory Management</h3>
+                <p>Manage equipment and supplies efficiently</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📧</div>
+                <h3>Email Notifications</h3>
+                <p>Receive updates on your access requests via email</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="landing-stats">
+        <div class="stat-item">
+            <div class="stat-number" id="stat-requests">0</div>
+            <div class="stat-label">Requests Processed</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number" id="stat-users">0</div>
+            <div class="stat-label">Active Users</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number" id="stat-items">0</div>
+            <div class="stat-label">Inventory Items</div>
+        </div>
+    </div>
+    
+    <footer class="landing-footer">
+        <p>&copy; 2026 ZolTrack. All rights reserved.</p>
+    </footer>
+</div>
+    <script src="js/main.js"></script>
+    <script src="js/landing.js"></script>
+</body>
+</html>

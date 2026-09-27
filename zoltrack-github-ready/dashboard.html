@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - ZolTrack</title>
+    <link rel="icon" href="/favicon.ico?v=zoltrack-v9-final" sizes="any">
+    <link rel="icon" type="image/png" href="/assets/favicon-64.png?v=zoltrack-v9-final" sizes="64x64">
+    <link rel="icon" type="image/svg+xml" href="/assets/zoltrack-logo.svg?v=zoltrack-v9-final">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/database.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="dashboard" class="dashboard">
+        <header>
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">
+                        <img class="brand-logo-img" src="assets/zoltrack-logo.svg" alt="ZolTrack Logo">
+                        <h1 style="color: white;">ZolTrack</h1>
+                    </div>
+                    <nav></nav>
+                    <div class="user-info">
+                        <div class="notification-center">
+                            <button class="notification-button" id="notification-button" type="button" aria-label="Open notifications">
+                                <i class="fa-regular fa-bell"></i>
+                                <span class="notification-badge" id="notification-badge" style="display:none;">0</span>
+                            </button>
+                            <div class="notification-panel" id="notification-panel">
+                                <div class="notification-panel-header">
+                                    <div><span class="eyebrow">Persistent</span><h4>Notifications</h4></div><button class="notification-read-all" id="mark-notifications-read" type="button">Mark all read</button>
+                                    <button class="icon-button" id="close-notifications" type="button" aria-label="Close notifications"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <div id="notification-list" class="notification-list">
+                                    <div class="notification-empty">No notifications yet.</div>
+                                </div>
+                            </div>
+                        </div>
+                        <span id="user-welcome">Welcome, User</span>
+                        <a href="#" class="btn btn-danger" id="logout-btn"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Logout</span></a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="container">
+            <h2 class="section-title" id="dashboard-title">Maintenance Dashboard</h2>
+            
+            <div class="dashboard-cards">
+                <div class="card">
+                    <div class="card-icon"><i class="fa-regular fa-clipboard"></i></div>
+                    <h3>Total Requests</h3>
+                    <div class="stat" id="total-requests">0</div>
+                    <p>Total</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon"><i class="fa-regular fa-clock"></i></div>
+                    <h3>Pending Requests</h3>
+                    <div class="stat" id="pending-requests">0</div>
+                    <p>Awaiting action</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+                    <h3>In Progress</h3>
+                    <div class="stat" id="inprogress-requests">0</div>
+                    <p>Being addressed</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon"><i class="fa-regular fa-circle-check"></i></div>
+                    <h3>Completed</h3>
+                    <div class="stat" id="completed-requests">0</div>
+                    <p>Done</p>
+                </div>
+            </div>
+
+            <section class="operations-overview" id="operations-overview">
+                <div class="operations-panel">
+                    <div class="operations-panel-heading">
+                        <div>
+                            <span class="eyebrow">Command Center</span>
+                            <h3>Attention Required</h3>
+                            <p>Live operational items that may need action.</p>
+                        </div>
+                        <span class="live-indicator"><span></span> Live</span>
+                    </div>
+                    <div class="attention-grid" id="attention-grid">
+                        <div class="attention-item skeleton-line">Loading operational data...</div>
+                    </div>
+                </div>
+                <div class="operations-panel">
+                    <div class="operations-panel-heading">
+                        <div>
+                            <span class="eyebrow">System Activity</span>
+                            <h3>Recent Activity</h3>
+                            <p>Latest maintenance and equipment activity.</p>
+                        </div>
+                    </div>
+                    <div class="activity-feed" id="activity-feed">
+                        <div class="activity-empty">Loading recent activity...</div>
+                    </div>
+                </div>
+            </section>
+            
+            <div class="tabs">
+                <div class="tab active" data-tab="new-request"><i class="fa-regular fa-pen-to-square"></i><span>New Request</span></div>
+                <div class="tab" data-tab="my-requests"><i class="fa-regular fa-folder-open"></i><span>My Requests</span></div>
+                <div class="tab" data-tab="all-requests" id="all-requests-tab"><i class="fa-regular fa-clipboard"></i><span>All Requests</span></div>
+                <div class="tab" data-tab="inventory" id="inventory-tab" style="display: none;"><i class="fa-solid fa-boxes-stacked"></i><span>Inventory</span></div>
+                <div class="tab" data-tab="borrow" id="borrow-tab" style="display: none;"><i class="fa-solid fa-arrow-right-arrow-left"></i><span>Borrowing</span></div>
+                <div class="tab" data-tab="reports" id="reports-tab" style="display: none;"><i class="fa-solid fa-chart-line"></i><span>Reports</span></div>
+                <div class="tab" data-tab="user-management" id="user-management-tab" style="display: none;"><i class="fa-solid fa-users-gear"></i><span>User Management</span></div>
+                <div class="tab" data-tab="approval-queue" id="approval-queue-tab" style="display: none;"><i class="fa-solid fa-user-check"></i><span>Approval Queue</span></div>
+                <div class="tab" data-tab="audit-log" id="audit-log-tab" style="display: none;"><i class="fa-solid fa-shield-halved"></i><span>Audit Log</span></div>
+            </div>
+            
+            <div class="tab-content" id="audit-log">
+                <div class="module-panel audit-panel">
+                    <div class="section-heading-row module-header"><div class="module-title-wrap"><div class="module-icon"><i class="fa-solid fa-shield-halved"></i></div><div><span class="eyebrow">Security & Accountability</span><h3>Audit Log</h3><p class="section-subtitle">Immutable operational history generated by server-side database events.</p></div></div><button class="btn btn-secondary" id="refresh-audit-log" type="button"><i class="fa-solid fa-rotate"></i> Refresh</button></div>
+                    <div class="table-responsive"><table><thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Entity</th><th>Summary</th></tr></thead><tbody id="audit-log-body"><tr><td colspan="5">Open Audit Log to load activity.</td></tr></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- New Request Tab -->
+            <div class="tab-content active" id="new-request">
+                <div class="form-container module-panel">
+                    <div class="section-heading-row module-header">
+                        <div class="module-title-wrap">
+                            <div class="module-icon"><i class="fa-regular fa-pen-to-square"></i></div>
+                            <div>
+                                <span class="eyebrow">Maintenance Desk</span>
+                                <h3>Submit Maintenance Request</h3>
+                                <p class="section-subtitle">Report an issue with complete location, priority, and supporting details.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <form id="maintenance-form" class="professional-form-grid">
+                        <div class="form-group">
+                            <label for="classroom">Classroom</label>
+                            <select class="form-control" id="classroom" required>
+                                <option value="">Select a classroom</option>
+                                <option value="room101">Room 101 - Science Lab</option>
+                                <option value="room202">Room 202 - Computer Lab</option>
+                                <option value="room305">Room 305 - Lecture Hall</option>
+                                <option value="room412">Room 412 - Art Room</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="issue-type">Issue Type</label>
+                            <select class="form-control" id="issue-type" required>
+                                <option value="">Select issue type</option>
+                                <option value="technology">Technology (Projectors, Computers, etc.)</option>
+                                <option value="furniture">Furniture (Chairs, Tables, etc.)</option>
+                                <option value="electrical">Electrical (Lights, Outlets, etc.)</option>
+                                <option value="plumbing">Plumbing (Sinks, Toilets, etc.)</option>
+                                <option value="tools">Tools (Hammer, Wrench, etc.)</option>
+                                <option value="supplies">Supplies (Markers, Paper, etc.)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="priority">Priority Level</label>
+                            <select class="form-control" id="priority" required>
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                        </div>
+                        <div class="form-group form-span-2">
+                            <label for="description">Issue Description</label>
+                            <textarea class="form-control" id="description" placeholder="Describe the issue, symptoms, and anything the maintenance team should know..." required></textarea>
+                        </div>
+                        <div class="form-group form-span-2">
+                            <label for="attachment">Supporting Photo <span class="optional-label">Optional</span></label>
+                            <input type="file" class="form-control" id="attachment" accept="image/*">
+                            <div id="issue-photo-preview" class="upload-preview" style="display: none;">
+                                <img id="issue-preview-image" alt="Issue preview">
+                            </div>
+                        </div>
+                        <div class="form-actions form-span-2">
+                            <button type="submit" class="btn"><i class="fa-regular fa-paper-plane"></i><span>Submit Request</span></button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- My Requests Tab -->
+            <div class="tab-content" id="my-requests">
+                <div class="form-container module-panel">
+                    <div class="section-heading-row module-header">
+                        <div class="module-title-wrap">
+                            <div class="module-icon"><i class="fa-regular fa-folder-open"></i></div>
+                            <div>
+                                <span class="eyebrow">Request Tracking</span>
+                                <h3>My Maintenance Requests</h3>
+                                <p class="section-subtitle">Track the progress and current status of requests you submitted.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table id="my-requests-table">
+                            <thead>
+                                <tr><th>Request ID</th><th>Classroom</th><th>Issue Type</th><th>Date Submitted</th><th>Status</th><th>Actions</th></tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- All Requests Tab -->
+            <div class="tab-content" id="all-requests">
+                <div class="form-container module-panel">
+                    <div class="section-heading-row module-header module-header-with-tools">
+                        <div class="module-title-wrap">
+                            <div class="module-icon"><i class="fa-regular fa-clipboard"></i></div>
+                            <div>
+                                <span class="eyebrow">Maintenance Operations</span>
+                                <h3>All Maintenance Requests</h3>
+                                <p class="section-subtitle">Review, filter, and manage submitted maintenance work.</p>
+                            </div>
+                        </div>
+                        <div class="module-toolbar">
+                            <div class="search-control"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="search-request-input" class="form-control" placeholder="Search requests"></div>
+                            <select id="status-filter" class="form-control compact-control">
+                                <option value="all">All Statuses</option><option value="pending">Pending</option><option value="in-progress">In Progress</option><option value="completed">Completed</option>
+                            </select>
+                            <select id="priority-filter" class="form-control compact-control">
+                                <option value="all">All Priorities</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="urgent">Urgent</option>
+                            </select>
+                            <button id="clear-filters-btn" class="btn btn-secondary btn-icon-text"><i class="fa-solid fa-rotate-left"></i><span>Reset</span></button>
+                        </div>
+                    </div>
+                    <div class="table-wrap"><table id="all-requests-table">
+                        <thead><tr><th>ID</th><th>Classroom</th><th>Issue Type</th><th>Submitted By</th><th>Date</th><th>Priority</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody></tbody>
+                    </table></div>
+                </div>
+            </div>
+            
+            <!-- INVENTORY TAB -->
+            <div class="tab-content" id="inventory">
+                <div class="form-container module-panel">
+                    <div class="section-heading-row module-header module-header-with-tools">
+                        <div class="module-title-wrap">
+                            <div class="module-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+                            <div>
+                                <span class="eyebrow">Asset Control</span>
+                                <h3>Inventory Management</h3>
+                                <p class="section-subtitle">Monitor stock levels, locations, availability, and equipment records.</p>
+                            </div>
+                        </div>
+                        <div class="module-toolbar">
+                            <select id="inventory-category-filter" class="form-control compact-control">
+                                <option value="all">All Categories</option><option value="Technology">Technology</option><option value="Furniture">Furniture</option><option value="Electrical">Electrical</option><option value="Plumbing">Plumbing</option><option value="Tools">Tools</option><option value="Supplies">Supplies</option>
+                            </select>
+                            <button id="add-inventory-btn" class="btn btn-success btn-icon-text"><i class="fa-solid fa-plus"></i><span>Add Item</span></button>
+                        </div>
+                    </div>
+                    <div class="table-wrap"><table id="inventory-table">
+                        <thead><tr><th>Item No/Serial</th><th>Item Name</th><th>Category</th><th>Quantity</th><th>Min Stock</th><th>Location</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody><tr><td colspan="8" class="table-empty">Loading inventory...</td></tr></tbody>
+                    </table></div>
+                </div>
+            </div>
+            
+            <!-- BORROW/RETURN TAB -->
+            <div class="tab-content" id="borrow">
+                <div class="form-container">
+                    <div class="section-heading-row module-header">
+                        <div class="module-title-wrap">
+                            <div class="module-icon"><i class="fa-solid fa-arrow-right-arrow-left"></i></div>
+                            <div>
+                                <span class="eyebrow">Equipment Access</span>
+                                <h3>Borrow Request</h3>
+                                <p class="section-subtitle">Submit a request for equipment. Inventory is reserved only after an Admin or Super Admin approves it.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                        <!-- Borrow Form -->
+                        <div style="flex: 1; min-width: 250px;">
+                            <div class="form-group">
+                                <label>Select Item</label>
+                                <select id="borrow-item" class="form-control">
+                                    <option value="">-- Select Item --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Quantity</label>
+                                <input type="number" id="borrow-quantity" class="form-control" value="1" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label>Purpose</label>
+                                <textarea id="borrow-purpose" class="form-control" rows="2" placeholder="Reason for borrowing..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Expected Return Date</label>
+                                <input type="date" id="borrow-return-date" class="form-control">
+                            </div>
+                            <button id="borrow-btn" class="btn btn-success">Submit Borrow Request</button>
+                        </div>
+                        
+                        <!-- Borrow History -->
+                        <div style="flex: 2; min-width: 400px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                                <div><span class="eyebrow">Request Tracking</span><h4 style="margin: 2px 0 0;">Borrow Requests & History</h4></div>
+                                <div class="borrow-tools">
+                                    <div class="search-control"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="search-borrow-input" class="form-control" placeholder="Search borrowing"></div>
+                                    <select id="borrow-status-filter" class="form-control compact-control">
+                                        <option value="all">All Statuses</option>
+                                        <option value="pending">Pending Approval</option>
+                                        <option value="borrowed">Approved / Borrowed</option>
+                                        <option value="returned">Returned</option>
+                                        <option value="rejected">Rejected</option>
+                                        <option value="overdue">Overdue</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="overflow-x: auto;">
+                                <table id="borrow-table">
+                                    <thead>
+                                        <tr><th>Item</th><th>Borrower</th><th>Qty</th><th>Borrow Date</th><th>Expected Return</th><th>Status</th><th>Action</th></tr>
+                                    </thead>
+                                    <tbody><tr><td colspan="7" style="text-align: center;">Loading...</td></tr></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+           <!-- Reports Tab -->
+<div class="tab-content" id="reports">
+    <div id="reports-container">
+        <!-- Statistics Cards -->
+        <div class="stats-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
+            <div class="card">
+                <h3><i class="fa-regular fa-clipboard"></i> Total Requests</h3>
+                <div class="stat" id="report-total">0</div>
+            </div>
+            <div class="card">
+                <h3><i class="fa-regular fa-circle-check"></i> Completed</h3>
+                <div class="stat" id="report-completed" style="color: #4caf50;">0</div>
+            </div>
+            <div class="card">
+                <h3><i class="fa-regular fa-clock"></i> Pending</h3>
+                <div class="stat" id="report-pending" style="color: #ff9800;">0</div>
+            </div>
+            <div class="card">
+                <h3><i class="fa-solid fa-boxes-stacked"></i> Inventory Items</h3>
+                <div class="stat" id="report-inventory">0</div>
+            </div>
+            <div class="card">
+                <h3><i class="fa-solid fa-box-open"></i> Low Stock</h3>
+                <div class="stat" id="report-low-stock">0</div>
+            </div>
+            <div class="card">
+                <h3><i class="fa-solid fa-arrow-right-arrow-left"></i> Currently Borrowed</h3>
+                <div class="stat" id="report-borrowed">0</div>
+            </div>
+            <div class="card">
+                <h3><i class="fa-solid fa-triangle-exclamation"></i> Overdue</h3>
+                <div class="stat" id="report-overdue">0</div>
+            </div>
+            <div class="card">
+                <h3><i class="fa-solid fa-users"></i> Active Users</h3>
+                <div class="stat" id="report-active-users">0</div>
+            </div>
+        </div>
+        
+        <!-- Charts Row -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px; margin-bottom: 30px;">
+            <!-- Status Chart -->
+            <div class="form-container">
+                <h3>Request Status Distribution</h3>
+                <canvas id="statusChart" width="400" height="300"></canvas>
+            </div>
+            
+            <!-- Priority Chart -->
+            <div class="form-container">
+                <h3>Requests by Priority</h3>
+                <canvas id="priorityChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+        
+        <!-- Monthly Trends Chart -->
+        <div class="form-container" style="margin-bottom: 30px;">
+            <h3>Monthly Request Trends</h3>
+            <canvas id="trendsChart" width="800" height="300"></canvas>
+        </div>
+        
+        <!-- Export Section -->
+        <div class="form-container">
+            <h3>Export Reports</h3>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button id="export-requests-csv" class="btn"><i class="fa-solid fa-file-csv"></i> Export Requests to CSV</button>
+                <button id="export-inventory-csv" class="btn"><i class="fa-solid fa-file-csv"></i> Export Inventory to CSV</button>
+            </div>
+        </div>
+    </div>
+</div>
+            
+            <div class="tab-content" id="user-management">
+                <div class="form-container module-panel">
+                    <div class="section-heading-row module-header">
+                        <div class="module-title-wrap">
+                            <div class="module-icon"><i class="fa-solid fa-users-gear"></i></div>
+                            <div>
+                                <span class="eyebrow">Administration</span>
+                                <h3>User Management</h3>
+                                <p class="section-subtitle">Manage account access, roles, and active user status across the system.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-wrap"><table id="users-table">
+                        <thead><tr><th>Username</th><th>Full Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody><tr><td colspan="6" class="table-empty">Loading users...</td></tr></tbody>
+                    </table></div>
+                </div>
+            </div>
+            
+            <!-- Approval Queue Tab -->
+            <div class="tab-content" id="approval-queue">
+                <div class="form-container module-panel">
+                    <div class="section-heading-row module-header">
+                        <div class="module-title-wrap">
+                            <div class="module-icon"><i class="fa-solid fa-user-check"></i></div>
+                            <div>
+                                <span class="eyebrow">Access Review</span>
+                                <h3>Registration Approval Queue</h3>
+                                <p class="section-subtitle">Verify submitted credentials before granting access to ZolTrack.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-wrap"><table id="approval-table">
+                        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Document</th><th>Submitted</th><th>Actions</th></tr></thead>
+                        <tbody></tbody>
+                    </table></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Modals -->
+        <div class="modal" id="request-modal"><div class="modal-content"><div class="modal-header"><h3 class="modal-title">View / Manage Request</h3><button class="close-modal">&times;</button></div><div id="modal-body"></div></div></div>
+        <div class="modal" id="document-modal"><div class="modal-content"><div class="modal-header"><h3 class="modal-title">Document Preview</h3><button class="close-modal">&times;</button></div><div id="document-modal-body"></div></div></div>
+        <div class="notification" id="notification"></div>
+
+        <footer>
+            <div class="container">
+                <div class="footer-content">
+                    <div class="footer-section"><h3>ZolTrack</h3><p>Maintenance & Asset Management System</p><p class="brand-footnote">A system for school maintenance and tracking requests, assets, and inventory.</p></div>
+                    <div class="footer-section"><h3>Quick Links</h3><a href="#">Dashboard</a><a href="#">Submit Request</a><a href="#">Reports</a><a href="#">Inventory</a></div>
+                    <div class="footer-section"><h3>Contact</h3><p><i class="fa-regular fa-envelope"></i> Maintenance Office<br><i class="fa-solid fa-location-dot"></i> School Campus</p></div>
+                </div>
+                <div class="copyright"><p>&copy; 2026 ZolTrack. All rights reserved.</p><p>Built for a more efficient and better learning environment.</p></div>
+            </div>
+        </footer>
+    </div>
+    <script src="js/main.js"></script>
+    <script src="js/email-confirmation.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
