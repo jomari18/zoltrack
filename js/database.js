@@ -9,6 +9,7 @@ const Database = {
     initialized: false,
     
     init() {
+        if (this.initialized && this.supabase) return true;
         console.log('🔄 Database System Initializing...');
         
         if (!this.config.supabaseUrl || !this.config.supabaseKey) {
@@ -26,6 +27,9 @@ const Database = {
                 this.config.supabaseUrl,
                 this.config.supabaseKey
             );
+            this.supabase.auth.onAuthStateChange(() => {
+                if (this.clearReadCache) this.clearReadCache();
+            });
             this.initialized = true;
             console.log('✅ Supabase connected to:', this.config.supabaseUrl);
             return true;
@@ -441,3 +445,51 @@ const Database = {
 };
 
 console.log('✅ Database loaded successfully');
+// Short-lived, account-scoped snapshots. Concurrent consumers share one request.
+// Successful writes invalidate all snapshots before callers re-render their views.
+(function installReadCache(db) {
+    const entries = new Map();
+    let generation = 0;
+    db.clearReadCache = function () { generation++; entries.clear(); };
+    const reads = ['getRequests', 'getInventory', 'getBorrowTransactions',
+        'getPendingRegistrations', 'getReportMetrics'];
+    for (const name of reads) {
+        const original = db[name];
+        db[name] = async function (...args) {
+            const scope = typeof currentUser !== 'undefined' && currentUser
+                ? currentUser.id : 'anonymous';
+            const key = JSON.stringify([scope, name, args]);
+            const old = entries.get(key);
+            if (old && (old.pending || old.expires > Date.now())) {
+                return structuredClone(await old.promise);
+            }
+            const version = generation;
+            const entry = { pending: true, expires: 0, promise: null };
+            entry.promise = Promise.resolve().then(() => original.apply(this, args));
+            entries.set(key, entry);
+            try {
+                const value = await entry.promise;
+                if (generation === version && entries.get(key) === entry) {
+                    entry.pending = false;
+                    entry.expires = Date.now() + 15000;
+                }
+                return structuredClone(value);
+            } catch (error) {
+                if (entries.get(key) === entry) entries.delete(key);
+                throw error;
+            }
+        };
+    }
+    const writes = ['createRequest', 'completeMaintenanceRequest', 'updateRequest',
+        'createInventoryItem', 'updateInventoryItem', 'deleteInventoryItem',
+        'borrowItem', 'approveBorrowTransaction', 'rejectBorrowTransaction', 'returnItem',
+        'approveAuthProfile', 'rejectAuthProfile', 'setManagedUserRole', 'setManagedUserActive'];
+    for (const name of writes) {
+        const original = db[name];
+        db[name] = async function (...args) {
+            // Clear even on errors: a response can fail after the server commits.
+            try { return await original.apply(this, args); }
+            finally { this.clearReadCache(); }
+        };
+    }
+})(Database);

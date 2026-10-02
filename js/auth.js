@@ -622,7 +622,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
         saveCurrentUser(currentUser);
-        showDashboard();
         await loadData();
         showDashboard();
         return;

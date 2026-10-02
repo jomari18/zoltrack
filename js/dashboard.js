@@ -1,4 +1,5 @@
 async function refreshData() {
+    Database.clearReadCache();
     try {
         requests = await Database.getRequests();
         
@@ -627,6 +628,7 @@ async function renderAllRequests() {
     
     try {
         let filteredRequests = await Database.getRequests();
+        requests = filteredRequests;
         
         if (currentRequestFilters.status !== 'all') {
             filteredRequests = filteredRequests.filter(req => req.status === currentRequestFilters.status);
@@ -777,7 +779,8 @@ async function showRequestDetails(requestId) {
             itemTypeFilter = 'other';
         }
         
-        let allInventory = await Database.getInventory();
+        let allInventory = currentUser && ['admin', 'superadmin'].includes(currentUser.role)
+            && request.status !== 'completed' ? await Database.getInventory() : [];
         let filteredInventory = allInventory.filter(item => item.item_type === itemTypeFilter);
         
         if (filteredInventory.length === 0) {
