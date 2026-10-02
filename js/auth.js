@@ -321,6 +321,22 @@ function initializeAuthPages() {
             try {
                 if (!Database.initialized) Database.init();
 
+                const { data: usernameAvailable, error: usernameCheckError } =
+                    await Database.supabase.rpc('is_registration_username_available', {
+                        candidate_username: username
+                    });
+                if (usernameCheckError) throw usernameCheckError;
+                if (usernameAvailable !== true) {
+                    await Swal.fire({
+                        icon: 'warning',
+                        title: 'Username Already Taken',
+                        text: 'Please choose a different username.',
+                        confirmButtonColor: '#d32f2f'
+                    });
+                    document.getElementById('reg-username').focus();
+                    return;
+                }
+
                 submitBtn.textContent = 'Creating account...';
 
                 const { data: signUpData, error: signUpError } = await Database.supabase.auth.signUp({
