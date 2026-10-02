@@ -333,6 +333,24 @@ function initializeAuthPages() {
                 });
                 if (signUpError) throw signUpError;
 
+                // Supabase can return an obfuscated user for an existing confirmed
+                // account instead of an error. Do not present it as a new signup.
+                if (Array.isArray(signUpData?.user?.identities) &&
+                    signUpData.user.identities.length === 0) {
+                    await Swal.fire({
+                        icon: 'info',
+                        title: 'Email Already Registered',
+                        text: 'This email already has an account. Please sign in instead.',
+                        confirmButtonText: 'Go to Sign In',
+                        showCancelButton: true,
+                        cancelButtonText: 'Use Another Email',
+                        confirmButtonColor: '#d32f2f'
+                    }).then((result) => {
+                        if (result.isConfirmed) window.location.href = 'login.html';
+                    });
+                    return;
+                }
+
                 // Do not submit the verification document here. With email confirmation
                 // enabled, signUp may create the account without an authenticated session.
                 // The document is collected securely on the user's first confirmed sign-in.
