@@ -93,7 +93,7 @@ async function collectAndSubmitVerification(user) {
                 'PENDING REVIEW',
                 'Your registration is under review. You will receive an email once approved.'
             );
-            if (emailConfirmation.superAdminEmail) await emailConfirmation.sendEmail(
+            await emailConfirmation.sendEmail(
                 emailConfirmation.superAdminEmail,
                 'Admin',
                 `New verification submission from ${user.fullName} (${user.email}).`,
@@ -327,7 +327,7 @@ function initializeAuthPages() {
                     email,
                     password,
                     options: {
-                        emailRedirectTo: `${window.location.origin}/login.html`,
+                        emailRedirectTo: window.location.origin,
                         data: { full_name: fullName, username }
                     }
                 });
@@ -340,7 +340,7 @@ function initializeAuthPages() {
                 await Swal.fire({
                     icon: 'success',
                     title: 'Check Your Email',
-                    text: "If this email can be registered, we\'ve sent a confirmation link. If you already have an account, please sign in instead.",
+                    text: "We\'ve sent a verification code to your email. Enter it on the next screen to activate your account.",
                     confirmButtonText: 'Continue to Sign In',
                     confirmButtonColor: '#d32f2f',
                     allowOutsideClick: false,
@@ -349,7 +349,8 @@ function initializeAuthPages() {
 
                 registrationForm.reset();
                 if (filePreview) filePreview.style.display = 'none';
-                window.location.href = 'login.html';
+                sessionStorage.setItem('zoltrack_verification_email', email);
+                window.location.href = 'verify-email.html';
             } catch (error) {
                 console.error('Registration error:', error);
                 const safeMessage = error?.message || 'Something went wrong. Please try again.';
@@ -422,6 +423,19 @@ function initializeAuthPages() {
                 window.location.replace('dashboard.html');
             } catch (error) {
                 console.error('Auth login error:', error);
+                if (error?.code === 'email_not_confirmed' || /email.*not.*confirm/i.test(error?.message || '')) {
+                    sessionStorage.setItem('zoltrack_verification_email', email);
+                    await Swal.fire({
+                        icon: 'info',
+                        title: 'Email Not Verified',
+                        text: 'Enter the verification code sent to your email to activate your account.',
+                        confirmButtonText: 'Enter Code',
+                        confirmButtonColor: '#d32f2f',
+                        allowOutsideClick: false
+                    });
+                    window.location.replace('verify-email.html');
+                    return;
+                }
                 Swal.fire({
                     icon: 'error',
                     title: 'Login Failed',

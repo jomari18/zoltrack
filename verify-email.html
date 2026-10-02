@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email - ZolTrack</title>
+    <link rel="icon" href="/favicon.ico?v=zoltrack-v10-otp" sizes="any">
+    <link rel="icon" type="image/png" href="assets/favicon-64.png?v=zoltrack-v10-otp" sizes="64x64">
+    <link rel="icon" type="image/svg+xml" href="assets/zoltrack-logo.svg?v=zoltrack-v10-otp">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+<div class="auth-container">
+    <div class="auth-box" style="max-width:520px;">
+        <div class="auth-header">
+            <div class="logo">
+                <img class="brand-logo-img" src="assets/zoltrack-logo.svg" alt="ZolTrack Logo">
+                <h1>ZolTrack</h1>
+            </div>
+            <h2>Verify Your Email</h2>
+            <p>Enter the verification code we sent to your email address.</p>
+        </div>
+
+        <form id="otp-form">
+            <div class="form-group">
+                <label for="otp-email">Email Address</label>
+                <input type="email" class="form-control" id="otp-email" placeholder="you@example.com" autocomplete="email" required>
+            </div>
+            <div class="form-group">
+                <label for="otp-code">Verification Code</label>
+                <input type="text" class="form-control" id="otp-code" autocomplete="one-time-code" maxlength="10" pattern="[0-9]{6,10}" placeholder="Enter verification code" required style="letter-spacing:0.25em;text-align:center;font-size:24px;font-weight:700;">
+                <small class="form-text">The code is valid for a limited time. Enter it exactly as shown in the email.</small>
+            </div>
+            <button type="submit" class="btn btn-block" id="verify-btn">Verify Email</button>
+            <button type="button" class="verification-signout" id="resend-btn" style="width:100%;margin-top:10px;">Resend Code</button>
+            <div class="auth-switch" style="margin-top:18px;">
+                Already verified? <a href="login.html">Sign In</a>
+            </div>
+            <div id="otp-message" class="msg" style="margin-top:16px;"></div>
+        </form>
+    </div>
+</div>
+<script src="js/verify-email.js"></script>
+</body>
+</html>
