@@ -25,7 +25,15 @@ const Database = {
         try {
             this.supabase = window.supabase.createClient(
                 this.config.supabaseUrl,
-                this.config.supabaseKey
+                this.config.supabaseKey,
+                document.body?.hasAttribute('data-password-recovery') ? {
+                    auth: {
+                        storageKey: 'zoltrack-password-recovery',
+                        persistSession: false,
+                        autoRefreshToken: false,
+                        detectSessionInUrl: false
+                    }
+                } : undefined
             );
             this.supabase.auth.onAuthStateChange(() => {
                 if (this.clearReadCache) this.clearReadCache();

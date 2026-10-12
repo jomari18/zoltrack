@@ -597,6 +597,11 @@ function showDashboard() {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
+    if (new URLSearchParams(window.location.search).get('password') === 'reset') {
+        const resetMessage = document.getElementById('password-reset-message');
+        if (resetMessage) resetMessage.hidden = false;
+        window.history.replaceState(null, '', window.location.pathname);
+    }
     initializeAuthPages();
     if (!Database.initialized) Database.init();
 
