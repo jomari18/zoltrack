@@ -117,7 +117,12 @@ const Database = {
         if (!this.initialized) this.init();
         if (!this.supabase) throw new Error('Database not initialized');
 
-        const { data, error } = await this.supabase.rpc('get_maintenance_requests_v8');
+        // v10.2 returns has_photo instead of every photo (keeps the list small).
+        // Falls back to the v8 list if the v10.2 migration has not been applied yet.
+        let { data, error } = await this.supabase.rpc('get_maintenance_requests_v102');
+        if (error && this.isMissingFunction(error)) {
+            ({ data, error } = await this.supabase.rpc('get_maintenance_requests_v8'));
+        }
         if (error) {
             console.error('Maintenance fetch failed:', error);
             throw error;
@@ -138,11 +143,31 @@ const Database = {
                 assignedToId: req.assigned_to_auth || req.assigned_to_legacy,
                 dateCompleted: req.date_completed,
                 notes: req.notes || '',
-                attachment: req.photo_url || null
+                attachment: req.photo_url || null,
+                hasAttachment: Boolean(req.has_photo || req.photo_url)
             };
         });
         if (userId) mapped = mapped.filter(r => String(r.submittedById) === String(userId));
         return mapped;
+    },
+
+    // A request's photo is fetched only when its details are opened.
+    async getRequestPhoto(requestId) {
+        this.requireClient();
+        const { data, error } = await this.supabase.rpc('get_maintenance_request_photo_v102', {
+            p_request_id: String(requestId)
+        });
+        if (error && this.isMissingFunction(error)) {
+            const { data: rows, error: listError } = await this.supabase.rpc('get_maintenance_requests_v8');
+            if (listError) throw listError;
+            return (rows || []).find(r => r.request_id === String(requestId))?.photo_url || null;
+        }
+        if (error) throw error;
+        return data || null;
+    },
+
+    isMissingFunction(error) {
+        return error?.code === 'PGRST202' || /could not find the function/i.test(error?.message || '');
     },
 
     async createRequest(requestData, currentUserId) {
@@ -470,7 +495,7 @@ console.log('✅ Database loaded successfully');
     const entries = new Map();
     let generation = 0;
     db.clearReadCache = function () { generation++; entries.clear(); };
-    const reads = ['getRequests', 'getInventory', 'getBorrowTransactions',
+    const reads = ['getRequests', 'getRequestPhoto', 'getInventory', 'getBorrowTransactions',
         'getPendingRegistrations', 'getReportMetrics'];
     for (const name of reads) {
         const original = db[name];

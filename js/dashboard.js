@@ -198,14 +198,14 @@ function initializeDashboard() {
             }
             
             if (attachment) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    saveRequest(e.target.result);
-                };
-                reader.onerror = function() {
-                    saveRequest(null);
-                };
-                reader.readAsDataURL(attachment);
+                try {
+                    saveRequest(await compressPhoto(attachment));
+                } catch (photoError) {
+                    console.error('Photo processing failed:', photoError);
+                    showToast('That photo could not be attached. Try a JPG or PNG image.', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                }
             } else {
                 saveRequest(null);
             }
@@ -551,6 +551,28 @@ function triggerRegistrationAction(registrationId, action) {
     }
 }
 
+// Shrinks a photo to at most 1600px on its longest side as a JPEG data URL,
+// so stored attachments stay small (a 5 MB phone photo becomes a few hundred KB).
+async function compressPhoto(file, maxSide = 1600, quality = 0.82) {
+    const objectUrl = URL.createObjectURL(file);
+    try {
+        const image = new Image();
+        image.src = objectUrl;
+        await image.decode();
+        const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const context = canvas.getContext('2d');
+        context.fillStyle = '#fff'; // transparent PNG areas become white, not black
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL('image/jpeg', quality);
+    } finally {
+        URL.revokeObjectURL(objectUrl);
+    }
+}
+
 // Escapes text for HTML content and quoted attributes (quotes included; 0 stays "0").
 function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>'"]/g, (char) => ({
@@ -615,7 +637,7 @@ async function renderMyRequests() {
                 <td><span class="status status-${cssToken(request.status)}">${escapeHtml(formatStatus(request.status))}</span></td>
                 <td>
                     <button class="btn view-details" data-id="${escapeHtml(request.id)}">View Details</button>
-                    ${request.attachment ? '<span class="badge">📎</span>' : ''}
+                    ${request.hasAttachment ? '<span class="badge">📎</span>' : ''}
                 </td>
             `;
         });
@@ -808,8 +830,17 @@ async function showRequestDetails(requestId) {
         ).join('');
         
         let attachmentHtml = '';
-        const attachmentUrl = escapeHtml(safeUrl(request.attachment));
-        if (request.attachment && !attachmentUrl) {
+        // The list no longer carries photos; fetch this request's photo on demand.
+        let photo = request.attachment;
+        if (!photo && request.hasAttachment) {
+            try {
+                photo = await Database.getRequestPhoto(request.id);
+            } catch (photoError) {
+                console.error('Photo load failed:', photoError);
+            }
+        }
+        const attachmentUrl = escapeHtml(safeUrl(photo));
+        if (request.hasAttachment && !attachmentUrl) {
             attachmentHtml = `
                 <div class="form-group">
                     <label>Attachment</label>

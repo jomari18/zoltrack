@@ -63,7 +63,7 @@ test('getRequests maps database rows and filters by submitter', async () => {
     { request_id: 'REQ-0002', classroom: 'Hall', issue_type: 'Furniture', description: 'Chair', priority: 'low',
       submitted_by_legacy: 'legacy-9', date_submitted: '2026-10-02', status: 'completed', notes: 'Fixed' }
   ];
-  const { db } = load({ get_maintenance_requests_v8: ok(rows) });
+  const { db } = load({ get_maintenance_requests_v102: ok(rows) });
   const all = await db.getRequests();
   assert.equal(all.length, 2);
   assert.equal(all[0].id, 'REQ-0001');
@@ -119,33 +119,33 @@ test('borrowing workflow calls each RPC with numeric IDs', async () => {
 
 test('reads are cached until a write clears them', async () => {
   const { db, calls } = load({
-    get_maintenance_requests_v8: ok([]),
+    get_maintenance_requests_v102: ok([]),
     submit_maintenance_request_v801: ok('REQ-0003')
   });
   await db.getRequests();
   await db.getRequests();
-  assert.equal(calls.filter(c => c.name === 'get_maintenance_requests_v8').length, 1, 'second read served from cache');
+  assert.equal(calls.filter(c => c.name === 'get_maintenance_requests_v102').length, 1, 'second read served from cache');
   await db.createRequest({ classroom: 'Lab' });
   await db.getRequests();
-  assert.equal(calls.filter(c => c.name === 'get_maintenance_requests_v8').length, 2, 'write cleared the cache');
+  assert.equal(calls.filter(c => c.name === 'get_maintenance_requests_v102').length, 2, 'write cleared the cache');
 });
 
 test('a failed write still clears the cache because the server may have committed', async () => {
   const { db, calls } = load({
     get_inventory_v8: ok([]),
-    get_maintenance_requests_v8: ok([]),
+    get_maintenance_requests_v102: ok([]),
     approve_borrow_request_v81: fail('timeout')
   });
   await db.getRequests();
   await assert.rejects(db.approveBorrowTransaction('9'), /timeout/);
   await db.getRequests();
-  assert.equal(calls.filter(c => c.name === 'get_maintenance_requests_v8').length, 2);
+  assert.equal(calls.filter(c => c.name === 'get_maintenance_requests_v102').length, 2);
 });
 
 test('a failed read is not cached', async () => {
   let attempt = 0;
   const { db } = load({
-    get_maintenance_requests_v8: () => (++attempt === 1 ? fail('network') : ok([]))
+    get_maintenance_requests_v102: () => (++attempt === 1 ? fail('network') : ok([]))
   });
   await assert.rejects(db.getRequests(), /network/);
   assert.equal((await db.getRequests()).length, 0);
@@ -157,4 +157,39 @@ test('borrowing initializes the client itself when called before the dashboard i
   db.supabase = null;
   assert.equal(await db.borrowItem({ item_id: 1, quantity: 1, purpose: 'Class', expected_return_date: '2026-10-20' }), 7);
   assert.equal(calls[0].name, 'submit_borrow_request_v81');
+});
+
+test('the request list carries a has_photo flag instead of the photo itself', async () => {
+  const { db } = load({ get_maintenance_requests_v102: ok([
+    { request_id: 'REQ-0001', issue_type: 'Plumbing', has_photo: true },
+    { request_id: 'REQ-0002', issue_type: 'Furniture', has_photo: false }
+  ]) });
+  const [withPhoto, without] = await db.getRequests();
+  assert.equal(withPhoto.hasAttachment, true);
+  assert.equal(withPhoto.attachment, null);
+  assert.equal(without.hasAttachment, false);
+});
+
+test('falls back to the v8 list when the v10.2 migration is not applied yet', async () => {
+  const { db, calls } = load({
+    get_maintenance_requests_v102: { data: null, error: { code: 'PGRST202', message: 'Could not find the function' } },
+    get_maintenance_requests_v8: ok([{ request_id: 'REQ-0003', issue_type: 'Electrical', photo_url: 'data:image/png;base64,AAAA' }])
+  });
+  const [row] = await db.getRequests();
+  assert.deepEqual(calls.map(c => c.name), ['get_maintenance_requests_v102', 'get_maintenance_requests_v8']);
+  assert.equal(row.hasAttachment, true);
+  assert.equal(row.attachment, 'data:image/png;base64,AAAA');
+});
+
+test('a single photo is fetched on demand and cached briefly', async () => {
+  const { db, calls } = load({ get_maintenance_request_photo_v102: ok('data:image/jpeg;base64,BBBB') });
+  assert.equal(await db.getRequestPhoto('REQ-0004'), 'data:image/jpeg;base64,BBBB');
+  assert.equal(await db.getRequestPhoto('REQ-0004'), 'data:image/jpeg;base64,BBBB');
+  assert.deepEqual(calls, [{ name: 'get_maintenance_request_photo_v102', args: { p_request_id: 'REQ-0004' } }]);
+});
+
+test('other list errors are not hidden by the fallback', async () => {
+  const { db, calls } = load({ get_maintenance_requests_v102: fail('Approved account required') });
+  await assert.rejects(db.getRequests(), /Approved account required/);
+  assert.equal(calls.length, 1);
 });
