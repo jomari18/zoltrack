@@ -393,13 +393,21 @@ const Database = {
 
     // ============ BORROW/RETURN METHODS (V8.1 Auth + atomic workflow) ============
 
+    // Borrowing calls may run before the dashboard finishes its own init().
+    requireClient() {
+        if (!this.initialized) this.init();
+        if (!this.supabase) throw new Error('Database not initialized');
+    },
+
     async getBorrowTransactions() {
+        this.requireClient();
         const { data, error } = await this.supabase.rpc('get_borrow_transactions_v81');
         if (error) { console.error('V8.1 borrow fetch error:', error); throw error; }
         return data || [];
     },
 
     async borrowItem(transactionData) {
+        this.requireClient();
         const { data, error } = await this.supabase.rpc('submit_borrow_request_v81', {
             p_item_id: Number(transactionData.item_id),
             p_quantity: Number(transactionData.quantity),
@@ -411,18 +419,21 @@ const Database = {
     },
 
     async approveBorrowTransaction(transactionId) {
+        this.requireClient();
         const { data, error } = await this.supabase.rpc('approve_borrow_request_v81', { p_transaction_id: Number(transactionId) });
         if (error) { console.error('V8.1 approve error:', error); throw error; }
         return data;
     },
 
     async rejectBorrowTransaction(transactionId) {
+        this.requireClient();
         const { data, error } = await this.supabase.rpc('reject_borrow_request_v81', { p_transaction_id: Number(transactionId) });
         if (error) { console.error('V8.1 reject error:', error); throw error; }
         return data;
     },
 
     async returnItem(transactionId) {
+        this.requireClient();
         const { data, error } = await this.supabase.rpc('return_borrow_item_v81', { p_transaction_id: Number(transactionId) });
         if (error) { console.error('V8.1 return error:', error); throw error; }
         return !!data;

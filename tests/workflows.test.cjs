@@ -150,3 +150,11 @@ test('a failed read is not cached', async () => {
   await assert.rejects(db.getRequests(), /network/);
   assert.equal((await db.getRequests()).length, 0);
 });
+
+test('borrowing initializes the client itself when called before the dashboard init', async () => {
+  const { db, calls } = load({ submit_borrow_request_v81: ok(7) });
+  db.initialized = false;
+  db.supabase = null;
+  assert.equal(await db.borrowItem({ item_id: 1, quantity: 1, purpose: 'Class', expected_return_date: '2026-10-20' }), 7);
+  assert.equal(calls[0].name, 'submit_borrow_request_v81');
+});
