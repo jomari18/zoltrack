@@ -249,7 +249,7 @@ function showToast(message, type = 'info') {
             toast: true,
             position: 'top-end',
             icon: 'info',
-            title: message,
+            titleText: message,
             showConfirmButton: false,
             timer: 1800,
             timerProgressBar: true
@@ -332,17 +332,17 @@ async function renderApprovalQueue() {
             row.innerHTML = `
                   <td>${escapeHtml(registration.fullName)}</td>
                   <td>${escapeHtml(registration.email)}</td>
-                  <td>${formatRole(registration.role)}</td>
+                  <td>${escapeHtml(formatRole(registration.role))}</td>
                   <td>
                     ${registration.documentFile ? 
-                        `<button class="btn view-document" data-id="${registration.id}"><i class="fa-regular fa-file-lines"></i> View Document</button>` : 
+                        `<button class="btn view-document" data-id="${escapeHtml(registration.id)}"><i class="fa-regular fa-file-lines"></i> View Document</button>` : 
                         '<span>No document</span>'
                     }
                   </td>
                   <td>${new Date(registration.submittedAt).toLocaleDateString()}</td>
                   <td>
-                    <button class="btn btn-success approve-registration" data-id="${registration.id}">Approve</button>
-                    <button class="btn btn-danger reject-registration" data-id="${registration.id}">Reject</button>
+                    <button class="btn btn-success approve-registration" data-id="${escapeHtml(registration.id)}">Approve</button>
+                    <button class="btn btn-danger reject-registration" data-id="${escapeHtml(registration.id)}">Reject</button>
                   </td>
             `;
         });
@@ -491,7 +491,7 @@ async function handleViewDoc(e) {
                             </div>
                         </div>
                         <div class="verification-viewer__header-actions">
-                            <a class="verification-icon-btn" href="${documentUrl}" target="_blank" rel="noopener noreferrer" title="Open full size" aria-label="Open full size">
+                            <a class="verification-icon-btn" href="${escapeHtml(safeUrl(documentUrl))}" target="_blank" rel="noopener noreferrer" title="Open full size" aria-label="Open full size">
                                 <i class="fa-solid fa-arrow-up-right-from-square"></i>
                             </a>
                             <button class="verification-icon-btn" type="button" onclick="closeVerificationViewer()" title="Close" aria-label="Close">
@@ -502,8 +502,8 @@ async function handleViewDoc(e) {
 
                     <div class="verification-viewer__preview">
                         ${isPdf
-                            ? `<iframe src="${documentUrl}" title="Verification document preview"></iframe>`
-                            : `<img src="${documentUrl}" alt="Verification document submitted by ${escapeHtml(registration.fullName)}">`
+                            ? `<iframe src="${escapeHtml(safeUrl(documentUrl))}" title="Verification document preview"></iframe>`
+                            : `<img src="${escapeHtml(safeUrl(documentUrl))}" alt="Verification document submitted by ${escapeHtml(registration.fullName)}">`
                         }
                     </div>
 
@@ -513,10 +513,10 @@ async function handleViewDoc(e) {
                             <span>Submitted ${submitted}</span>
                         </div>
                         <div class="verification-viewer__decisions">
-                            <button class="btn verification-reject" type="button" onclick="closeVerificationViewer(); triggerRegistrationAction('${registration.id}', 'reject')">
+                            <button class="btn verification-reject" type="button" onclick="closeVerificationViewer(); triggerRegistrationAction('${escapeHtml(registration.id)}', 'reject')">
                                 <i class="fa-solid fa-xmark"></i> Reject
                             </button>
-                            <button class="btn verification-approve" type="button" onclick="closeVerificationViewer(); triggerRegistrationAction('${registration.id}', 'approve')">
+                            <button class="btn verification-approve" type="button" onclick="closeVerificationViewer(); triggerRegistrationAction('${escapeHtml(registration.id)}', 'approve')">
                                 <i class="fa-solid fa-check"></i> Approve
                             </button>
                         </div>
@@ -551,11 +551,27 @@ function triggerRegistrationAction(registrationId, action) {
     }
 }
 
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+// Escapes text for HTML content and quoted attributes (quotes included; 0 stays "0").
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>'"]/g, (char) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    })[char]);
+}
+
+// Only https links and inline image/PDF data are rendered; anything else (javascript:, etc.) becomes empty.
+function safeUrl(value) {
+    const url = String(value ?? '').trim();
+    if (/^data:(image\/(png|jpe?g|gif|webp)|application\/pdf);base64,[a-z0-9+/=\s]+$/i.test(url)) return url;
+    try {
+        return new URL(url).protocol === 'https:' ? url : '';
+    } catch (error) {
+        return '';
+    }
+}
+
+// Reduces a database value to a safe CSS class fragment (e.g. "in-progress").
+function cssToken(value) {
+    return String(value ?? '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
 }
 
 function updateDashboardStats() {
@@ -596,9 +612,9 @@ async function renderMyRequests() {
                 <td>${escapeHtml(request.classroom)}</td>
                 <td>${escapeHtml(request.issueType)}</td>
                 <td>${escapeHtml(request.dateSubmitted)}</td>
-                <td><span class="status status-${request.status}">${formatStatus(request.status)}</span></td>
+                <td><span class="status status-${cssToken(request.status)}">${escapeHtml(formatStatus(request.status))}</span></td>
                 <td>
-                    <button class="btn view-details" data-id="${request.id}">View Details</button>
+                    <button class="btn view-details" data-id="${escapeHtml(request.id)}">View Details</button>
                     ${request.attachment ? '<span class="badge">📎</span>' : ''}
                 </td>
             `;
@@ -663,10 +679,10 @@ async function renderAllRequests() {
                 <td>${escapeHtml(request.issueType)}</td>
                 <td>${escapeHtml(request.submittedBy)}</td>
                 <td>${escapeHtml(request.dateSubmitted)}</td>
-                <td><span class="priority priority-${request.priority}">${escapeHtml(request.priority).toUpperCase()}</span></td>
-                <td><span class="status status-${request.status}">${formatStatus(request.status)}</span></td>
+                <td><span class="priority priority-${cssToken(request.priority)}">${escapeHtml(request.priority).toUpperCase()}</span></td>
+                <td><span class="status status-${cssToken(request.status)}">${escapeHtml(formatStatus(request.status))}</span></td>
                 <td>
-                    <button class="btn view-details request-manage-btn" data-id="${request.id}"><i class="fa-solid fa-sliders"></i> View / Manage</button>
+                    <button class="btn view-details request-manage-btn" data-id="${escapeHtml(request.id)}"><i class="fa-solid fa-sliders"></i> View / Manage</button>
                 </td>
             `;
         });
@@ -697,7 +713,7 @@ async function renderUsersTable() {
             const protectedAccount = user.role === 'superadmin';
             const isActive = user.status === 'active';
             const roleControl = (isSelf || protectedAccount)
-                ? `<span class="role-badge role-${escapeHtml(user.role)}"><i class="fa-solid fa-shield-halved"></i> ${formatRole(user.role)}</span>`
+                ? `<span class="role-badge role-${escapeHtml(user.role)}"><i class="fa-solid fa-shield-halved"></i> ${escapeHtml(formatRole(user.role))}</span>`
                 : `<div class="managed-role-control">
                     <select class="managed-role-select form-control" data-id="${user.id}" data-current="${escapeHtml(user.role)}" aria-label="Role for ${escapeHtml(user.fullName || user.username || 'user')}">
                         <option value="user" ${user.role === 'user' ? 'selected' : ''}>User</option>
@@ -788,17 +804,25 @@ async function showRequestDetails(requestId) {
         }
         
         const inventoryOptions = filteredInventory.map(item => 
-            `<option value="${item.id}" data-name="${item.item_name}" data-qty="${item.quantity}" data-unit="${item.unit}">${item.item_name} (Stock: ${item.quantity} ${item.unit})</option>`
+            `<option value="${escapeHtml(item.id)}" data-name="${escapeHtml(item.item_name)}" data-qty="${escapeHtml(item.quantity)}" data-unit="${escapeHtml(item.unit)}">${escapeHtml(item.item_name)} (Stock: ${escapeHtml(item.quantity)} ${escapeHtml(item.unit)})</option>`
         ).join('');
         
         let attachmentHtml = '';
-        if (request.attachment) {
+        const attachmentUrl = escapeHtml(safeUrl(request.attachment));
+        if (request.attachment && !attachmentUrl) {
+            attachmentHtml = `
+                <div class="form-group">
+                    <label>Attachment</label>
+                    <p>This attachment can't be displayed safely.</p>
+                </div>
+            `;
+        } else if (attachmentUrl) {
             if (request.attachmentName && request.attachmentName.toLowerCase().endsWith('.pdf')) {
                 attachmentHtml = `
                     <div class="form-group">
                         <label>Attached File</label>
                         <div>
-                            <a href="${request.attachment}" download="${request.attachmentName}" class="btn btn-primary"><i class="fa-solid fa-download"></i> Download PDF</a>
+                            <a href="${attachmentUrl}" download="${escapeHtml(request.attachmentName)}" class="btn btn-primary"><i class="fa-solid fa-download"></i> Download PDF</a>
                         </div>
                     </div>
                 `;
@@ -807,8 +831,8 @@ async function showRequestDetails(requestId) {
                     <div class="form-group">
                         <label>Attached Photo</label>
                         <div>
-                            <img src="${request.attachment}" style="max-width: 100%; max-height: 300px;">
-                            <div><a href="${request.attachment}" download="${request.attachmentName || 'attachment.jpg'}" class="btn btn-primary"><i class="fa-solid fa-download"></i> Download Image</a></div>
+                            <img src="${attachmentUrl}" alt="Photo attached to request ${escapeHtml(request.id)}" style="max-width: 100%; max-height: 300px;">
+                            <div><a href="${attachmentUrl}" download="${escapeHtml(request.attachmentName || 'attachment.jpg')}" class="btn btn-primary"><i class="fa-solid fa-download"></i> Download Image</a></div>
                         </div>
                     </div>
                 `;
@@ -830,7 +854,7 @@ async function showRequestDetails(requestId) {
             <div class="form-group"><label>Description</label><p>${escapeHtml(request.description)}</p></div>
             <div class="form-group"><label>Submitted By</label><p>${escapeHtml(request.submittedBy)}</p></div>
             <div class="form-group"><label>Date Submitted</label><p>${escapeHtml(request.dateSubmitted)}</p></div>
-            <div class="form-group"><label>Status</label><p><span class="status status-${request.status}">${formatStatus(request.status)}</span></p></div>
+            <div class="form-group"><label>Status</label><p><span class="status status-${cssToken(request.status)}">${escapeHtml(formatStatus(request.status))}</span></p></div>
             
             ${request.status !== 'completed' && canComplete ? `
                 <div class="management-panel">
@@ -1003,8 +1027,8 @@ async function renderInventory() {
                 <td>${escapeHtml(item.location || '-')}<\/td>
                 <td><span class="status ${isLowStock ? 'status-pending' : 'status-active'}">${isLowStock ? 'Low Stock' : 'In Stock'}</span><\/td>
                 <td>
-                    <button class="btn edit-inventory" data-id="${item.id}"><i class="fa-regular fa-pen-to-square"></i> Edit</button>
-                    <button class="btn btn-danger delete-inventory" data-id="${item.id}"><i class="fa-regular fa-trash-can"></i> Delete</button>
+                    <button class="btn edit-inventory" data-id="${escapeHtml(item.id)}"><i class="fa-regular fa-pen-to-square"></i> Edit</button>
+                    <button class="btn btn-danger delete-inventory" data-id="${escapeHtml(item.id)}"><i class="fa-regular fa-trash-can"></i> Delete</button>
                  <\/td>
             `;
         });
@@ -1031,7 +1055,7 @@ async function editInventoryItem(itemId) {
     if (!item) return;
     
     const { value: newQuantity } = await Swal.fire({
-        title: `Edit ${item.item_name}`,
+        titleText: `Edit ${item.item_name}`,
         text: `Current quantity: ${item.quantity} ${item.unit}`,
         input: 'number',
         inputLabel: 'Enter new quantity',
@@ -1417,7 +1441,7 @@ async function refreshBorrowInventoryOptions() {
     const inventory = await Database.getInventory();
     borrowSelect.innerHTML = '<option value="">-- Select Item --</option>' +
         inventory.filter(item => Number(item.quantity) > 0).map(item =>
-            `<option value="${item.id}" data-name="${escapeHtml(item.item_name || '')}" data-stock="${Number(item.quantity) || 0}">${escapeHtml(item.item_name || 'Item')} (Available: ${Number(item.quantity) || 0})</option>`
+            `<option value="${escapeHtml(item.id)}" data-name="${escapeHtml(item.item_name || '')}" data-stock="${Number(item.quantity) || 0}">${escapeHtml(item.item_name || 'Item')} (Available: ${Number(item.quantity) || 0})</option>`
         ).join('');
 }
 
@@ -1477,10 +1501,10 @@ async function renderBorrowHistory() {
             let workflowAction = '<span class="muted-action">No action required</span>';
             if (showDecisionButtons) {
                 workflowAction = `
-                    <button class="btn btn-success btn-sm approve-borrow" data-id="${trans.id}" data-item-id="${trans.item_id}" data-qty="${trans.quantity}" data-item-name="${escapeHtml(trans.item_name || 'item')}"><i class="fa-solid fa-check"></i> Approve</button>
-                    <button class="btn btn-danger btn-sm reject-borrow" data-id="${trans.id}" data-item-name="${escapeHtml(trans.item_name || 'item')}"><i class="fa-solid fa-xmark"></i> Reject</button>`;
+                    <button class="btn btn-success btn-sm approve-borrow" data-id="${escapeHtml(trans.id)}" data-item-id="${escapeHtml(trans.item_id)}" data-qty="${escapeHtml(trans.quantity)}" data-item-name="${escapeHtml(trans.item_name || 'item')}"><i class="fa-solid fa-check"></i> Approve</button>
+                    <button class="btn btn-danger btn-sm reject-borrow" data-id="${escapeHtml(trans.id)}" data-item-name="${escapeHtml(trans.item_name || 'item')}"><i class="fa-solid fa-xmark"></i> Reject</button>`;
             } else if (showReturnButton) {
-                workflowAction = `<button class="btn btn-secondary btn-sm return-item" data-id="${trans.id}" data-item-id="${trans.item_id}" data-qty="${trans.quantity}"><i class="fa-solid fa-rotate-left"></i> Mark Returned</button>`;
+                workflowAction = `<button class="btn btn-secondary btn-sm return-item" data-id="${escapeHtml(trans.id)}" data-item-id="${escapeHtml(trans.item_id)}" data-qty="${escapeHtml(trans.quantity)}"><i class="fa-solid fa-rotate-left"></i> Mark Returned</button>`;
             } else if (trans.status === 'pending') {
                 workflowAction = '<span class="muted-action">Awaiting approval</span>';
             } else if (trans.status === 'rejected') {
@@ -1490,14 +1514,14 @@ async function renderBorrowHistory() {
             } else if (trans.status === 'borrowed') {
                 workflowAction = '<span class="muted-action">Currently borrowed</span>';
             }
-            const actionHtml = `<div class="table-actions"><button class="btn btn-secondary btn-sm view-borrow-details" data-id="${trans.id}"><i class="fa-regular fa-eye"></i> Details</button>${workflowAction}</div>`;
+            const actionHtml = `<div class="table-actions"><button class="btn btn-secondary btn-sm view-borrow-details" data-id="${escapeHtml(trans.id)}"><i class="fa-regular fa-eye"></i> Details</button>${workflowAction}</div>`;
 
             row.innerHTML = `
                 <td><strong>${escapeHtml(trans.item_name || 'N/A')}</strong><div class="table-secondary">${escapeHtml(trans.purpose || '')}</div></td>
                 <td>${escapeHtml(trans.borrower_name || 'N/A')}</td>
                 <td>${Number(trans.quantity) || 0}</td>
-                <td>${trans.borrow_date || '—'}</td>
-                <td>${trans.expected_return_date || '—'}</td>
+                <td>${escapeHtml(trans.borrow_date || '—')}</td>
+                <td>${escapeHtml(trans.expected_return_date || '—')}</td>
                 <td><span class="borrow-status ${statusMeta.cls}">${statusMeta.label}</span></td>
                 <td>${actionHtml}</td>
             `;
@@ -1795,7 +1819,7 @@ async function refreshProductionOverview() {
             visibleRequests.forEach(r => activity.push({
                 type: 'request', date: r.dateCompleted || r.dateSubmitted || '',
                 icon: r.status === 'completed' ? 'fa-regular fa-circle-check' : 'fa-regular fa-clipboard',
-                title: `${r.id || 'Request'} · ${formatStatus(r.status)}`,
+                title: `${r.id || 'Request'} · ${escapeHtml(formatStatus(r.status))}`,
                 detail: `${r.classroom || 'Location'} · ${r.issueType || 'Maintenance request'}`
             }));
             snapshot.transactions.forEach(t => {
@@ -1809,7 +1833,7 @@ async function refreshProductionOverview() {
             activity.sort((a,b) => String(b.date).localeCompare(String(a.date)));
             activityFeed.innerHTML = activity.length ? activity.slice(0, 6).map(item => `
                 <div class="activity-item">
-                    <div class="activity-icon"><i class="${item.icon}"></i></div>
+                    <div class="activity-icon"><i class="${escapeHtml(item.icon)}"></i></div>
                     <div class="activity-copy"><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.detail)}</span></div>
                     <time>${formatActivityDate(item.date)}</time>
                 </div>`).join('') : '<div class="activity-empty">No recent activity to display.</div>';
