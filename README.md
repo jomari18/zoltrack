@@ -20,6 +20,22 @@ ZolTrack is a web-based system for school facilities that centralizes maintenanc
 - Dashboard metrics, charts, and CSV reporting
 - Responsive dark-themed interface
 
+## System design
+
+These diagrams were drawn from the app's actual database schema, roles and code paths.
+
+**Context diagram.** ZolTrack as a single process, and the people and outside services it exchanges data with.
+
+![ZolTrack context diagram](docs/diagrams/context-diagram.png)
+
+**Data flow diagram (Level 1).** The main processes, the data stores they read and write (grouped from the database tables), and the data that moves between them.
+
+![ZolTrack data flow diagram](docs/diagrams/data-flow-diagram.png)
+
+**Flowchart: maintenance request lifecycle.** The main workflow step by step, including decisions and error paths.
+
+![ZolTrack flowchart](docs/diagrams/flowchart.png)
+
 ## Tech Stack
 
 - HTML5, CSS3, JavaScript
