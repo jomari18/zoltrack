@@ -6,7 +6,7 @@ ZolTrack is a web-based system for school facilities that centralizes maintenanc
 
 ## Live Demo
 
-**https://zoltrack.netlify.app**
+**[Open ZolTrack](https://zoltrack.netlify.app/)**
 
 ## Highlights
 
@@ -14,6 +14,7 @@ ZolTrack is a web-based system for school facilities that centralizes maintenanc
 - Supabase Auth with email confirmation and profile approval
 - Private verification-document storage with controlled access
 - Maintenance request tracking with server-generated request IDs
+- Request photos compressed in the browser and loaded only when opened
 - Atomic maintenance completion and inventory deduction
 - Inventory and borrowing workflows with approval and return handling
 - Persistent in-app notifications and audit logging
@@ -49,23 +50,31 @@ These diagrams were drawn from the app's actual database schema, roles and code 
 
 ## Security Design
 
-ZolTrack uses Supabase Row Level Security and server-side PostgreSQL functions for privileged operations. User-owned records are scoped to authenticated identities, while administrative actions validate roles server-side. Verification documents are stored in a private bucket.
+ZolTrack uses Supabase Row Level Security and server-side PostgreSQL functions for privileged operations. User-owned records are scoped to authenticated identities, while administrative actions validate roles server-side. Request priority, photo type and photo size are validated in the database, and all user-entered text is escaped before it is shown. Verification documents are stored in a private bucket.
 
 > Frontend Supabase anon/publishable credentials and EmailJS public identifiers are client-visible by design. Private SMTP credentials, service-role keys, and passwords must never be committed to this repository.
 
-## Database Migrations
+## Database
 
-The `supabase/` directory contains the staged SQL migrations used during development, including authentication migration, RLS hardening, legacy-auth retirement, atomic maintenance completion, private verification storage, persistent notifications/audit logging, and reporting functions.
+The `supabase/` directory contains the staged SQL migrations used during development, including authentication migration, RLS hardening, legacy-auth retirement, atomic maintenance completion, private verification storage, persistent notifications/audit logging, reporting functions, and on-demand request photos with input validation (`V10_2_REQUEST_PHOTOS_AND_INPUT_HARDENING.sql`).
 
 ## Local Use
 
 This project is a static frontend and can be served with any local web server. The deployed application depends on its configured Supabase project and external email services.
 
+## Testing
+
+28 automated tests run with the Node.js test runner and a fake Supabase client, so no network or database is used. They cover HTML escaping, maintenance, approval and borrowing workflows, the read cache, and password recovery.
+
+```sh
+node --test tests/escaping.test.cjs tests/workflows.test.cjs tests/password-recovery.test.cjs
+```
+
 ## Author
 
-**Jomari M. Candido**  
+**Jomari M. Candido**
 Sole Software Developer
 
 ## Project Status
 
-Portfolio release — ZolTrack v9.0.
+Portfolio release — ZolTrack v10.2, live on Netlify and deployed from this repository.
