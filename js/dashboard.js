@@ -35,6 +35,19 @@ let statusChart = null;
 let priorityChart = null;
 let trendsChart = null;
 
+// Footer quick links open the matching tab; a link whose tab this role cannot see is hidden.
+function syncFooterLinks() {
+    document.querySelectorAll('[data-go-tab]').forEach(link => {
+        const tab = document.querySelector(`.tab[data-tab="${link.dataset.goTab}"]`);
+        link.hidden = !tab || tab.style.display === 'none';
+        link.onclick = event => {
+            event.preventDefault();
+            document.querySelector(`.tab[data-tab="${link.dataset.goTab}"]`)?.click();
+            document.querySelector('.tabs')?.scrollIntoView({ behavior: 'smooth' });
+        };
+    });
+}
+
 function initializeDashboard() {
     const tabs = document.querySelectorAll('.tab');
     const tabContents = document.querySelectorAll('.tab-content');
@@ -783,6 +796,7 @@ async function toggleManagedUserStatus(e) {
 
 // ============ SHOW REQUEST DETAILS WITH INVENTORY DEDUCTION (FIXED - ADMIN/SUPERADMIN ONLY) ============
 async function showRequestDetails(requestId) {
+    setRequestModalTitle('View / Manage Request');
     try {
         let request = requests.find(req => req.id === requestId);
         
@@ -1101,10 +1115,14 @@ async function editInventoryItem(itemId) {
     
     const quantity = Database.parseStockQuantity(newQuantity);
     if (quantity !== null) {
-        await Database.updateInventoryItem(itemId, { 
+        const updated = await Database.updateInventoryItem(itemId, { 
             quantity,
             last_updated: new Date().toISOString().split('T')[0]
         });
+        if (!updated) {
+            showToast('Could not update the item. Please try again.', 'error');
+            return;
+        }
         showToast(`${item.item_name} quantity updated to ${quantity}`, 'success');
         await renderInventory();
     }
@@ -1123,12 +1141,20 @@ async function deleteInventoryItem(itemId) {
     
     if (!result.isConfirmed) return;
     
-    await Database.deleteInventoryItem(itemId);
+    if (!await Database.deleteInventoryItem(itemId)) {
+        showToast('Could not delete the item. Please try again.', 'error');
+        return;
+    }
     showToast('Item deleted successfully', 'success');
     await renderInventory();
 }
 
+function setRequestModalTitle(title) {
+    document.querySelector('#request-modal .modal-title').textContent = title;
+}
+
 function showAddInventoryModal() {
+    setRequestModalTitle('Add Inventory Item');
     const modalBody = document.getElementById('modal-body');
     modalBody.innerHTML = `
         <div class="form-group">
@@ -1219,7 +1245,14 @@ function showAddInventoryModal() {
             last_updated: new Date().toISOString().split('T')[0]
         };
         
-        await Database.createInventoryItem(newItem);
+        if (Database.hasItemNumber(await Database.getInventory(), itemNumber)) {
+            showToast(`Item number ${itemNumber} is already used`, 'error');
+            return;
+        }
+        if (!await Database.createInventoryItem(newItem)) {
+            showToast('Could not add the item. Please try again.', 'error');
+            return;
+        }
         showToast('Item added successfully', 'success');
         document.getElementById('request-modal').style.display = 'none';
         await renderInventory();

@@ -738,6 +738,10 @@ footer {
     transition: all 0.3s ease;
 }
 
+.footer-section a[hidden] {
+    display: none;
+}
+
 .footer-section a:hover {
     color: var(--primary-color);
     transform: translateX(5px);

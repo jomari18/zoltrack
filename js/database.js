@@ -337,6 +337,11 @@ const Database = {
         return Number.isSafeInteger(quantity) ? quantity : null;
     },
 
+    hasItemNumber(inventory, itemNumber) {
+        const wanted = String(itemNumber ?? '').trim().toLowerCase();
+        return inventory.some(item => String(item.item_number ?? '').trim().toLowerCase() === wanted);
+    },
+    
     hasBadStockFields(fields) {
         return ['quantity', 'min_stock'].some(key => key in fields && this.parseStockQuantity(fields[key]) === null);
     },
@@ -362,6 +367,7 @@ const Database = {
             } catch (error) {
                 console.warn('Supabase create error:', error.message);
             }
+            return null;
         }
         
         const inventory = JSON.parse(localStorage.getItem('fixitInventory')) || [];
@@ -391,6 +397,7 @@ const Database = {
             } catch (error) {
                 console.warn('Supabase update exception:', error.message);
             }
+            return false;
         }
         
         const inventory = JSON.parse(localStorage.getItem('fixitInventory')) || [];
@@ -422,6 +429,7 @@ const Database = {
             } catch (error) {
                 console.warn('Supabase delete exception:', error.message);
             }
+            return false;
         }
         
         const inventory = JSON.parse(localStorage.getItem('fixitInventory')) || [];

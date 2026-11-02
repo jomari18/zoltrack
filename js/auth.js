@@ -594,6 +594,7 @@ function showDashboard() {
     if (typeof renderMyRequests !== 'undefined') renderMyRequests();
     if (typeof renderAllRequests !== 'undefined') renderAllRequests();
     if (typeof renderUsersTable !== 'undefined') renderUsersTable();
+    if (typeof syncFooterLinks === 'function') syncFooterLinks();
 }
 
 document.addEventListener('DOMContentLoaded', async function() {

@@ -221,3 +221,27 @@ test('inventory writes with a bad quantity never reach the database', async () =
   assert.ok(await db.createInventoryItem({ item_name: 'x', quantity: 0, min_stock: 1 }));
   assert.equal(writes.length, 3);
 });
+
+test('a failed inventory write reports failure instead of saving to this browser', async () => {
+  const { db, sandbox } = load();
+  const saved = [];
+  sandbox.localStorage = { getItem: () => null, setItem: (...args) => saved.push(args) };
+  const failed = { error: new Error('denied') };
+  db.supabase.from = () => ({
+    update: () => ({ eq: async () => failed }),
+    delete: () => ({ eq: async () => failed }),
+    insert: () => ({ select: () => ({ single: async () => ({ data: null, ...failed }) }) })
+  });
+
+  assert.equal(await db.updateInventoryItem(1, { quantity: 3 }), false);
+  assert.equal(await db.deleteInventoryItem(1), false);
+  assert.equal(await db.createInventoryItem({ item_name: 'x', quantity: 1, min_stock: 1 }), null);
+  assert.deepEqual(saved, []);
+});
+
+test('item numbers are compared without case or outer spaces', () => {
+  const { db } = load();
+  const inventory = [{ item_number: 'TEC-022' }, { item_number: null }];
+  assert.equal(db.hasItemNumber(inventory, ' tec-022 '), true);
+  assert.equal(db.hasItemNumber(inventory, 'TEC-023'), false);
+});
