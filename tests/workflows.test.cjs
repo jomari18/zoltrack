@@ -193,3 +193,31 @@ test('other list errors are not hidden by the fallback', async () => {
   await assert.rejects(db.getRequests(), /Approved account required/);
   assert.equal(calls.length, 1);
 });
+
+test('stock quantities must be whole numbers, 0 or more', () => {
+  const { db } = load();
+  for (const good of ['0', '12', ' 7 ', 12]) assert.equal(db.parseStockQuantity(good), Number(good));
+  for (const bad of ['', '   ', '-5', '1.5', 'abc', '1e3', null, undefined, NaN, -1]) {
+    assert.equal(db.parseStockQuantity(bad), null, `should reject ${String(bad)}`);
+  }
+});
+
+test('inventory writes with a bad quantity never reach the database', async () => {
+  const { db } = load();
+  const writes = [];
+  const table = {
+    update(row) { writes.push(row); return { eq: async () => ({ error: null }) }; },
+    insert(rows) { writes.push(rows); return { select: () => ({ single: async () => ({ data: { id: 1 }, error: null }) }) }; }
+  };
+  db.supabase.from = () => table;
+
+  assert.equal(await db.updateInventoryItem(1, { quantity: -5 }), false);
+  assert.equal(await db.updateInventoryItem(1, { quantity: NaN }), false);
+  assert.equal(await db.createInventoryItem({ item_name: 'x', quantity: 1, min_stock: NaN }), null);
+  assert.equal(writes.length, 0);
+
+  assert.equal(await db.updateInventoryItem(1, { quantity: 12 }), true);
+  assert.equal(await db.updateInventoryItem(1, { location: 'Room 1' }), true);
+  assert.ok(await db.createInventoryItem({ item_name: 'x', quantity: 0, min_stock: 1 }));
+  assert.equal(writes.length, 3);
+});

@@ -329,7 +329,20 @@ const Database = {
         return inventory;
     },
     
+    // A stock count is a whole number, 0 or more; anything else gives null.
+    parseStockQuantity(value) {
+        const text = String(value ?? '').trim();
+        if (!/^\d+$/.test(text)) return null;
+        const quantity = Number(text);
+        return Number.isSafeInteger(quantity) ? quantity : null;
+    },
+
+    hasBadStockFields(fields) {
+        return ['quantity', 'min_stock'].some(key => key in fields && this.parseStockQuantity(fields[key]) === null);
+    },
+
     async createInventoryItem(itemData) {
+        if (this.hasBadStockFields(itemData)) return null;
         console.log('➕ Creating inventory item:', itemData.item_name);
         
         if (this.initialized && this.supabase) {
@@ -359,6 +372,7 @@ const Database = {
     },
     
     async updateInventoryItem(itemId, updates) {
+        if (this.hasBadStockFields(updates)) return false;
         console.log('🔄 Updating inventory item:', itemId);
         
         if (this.initialized && this.supabase) {

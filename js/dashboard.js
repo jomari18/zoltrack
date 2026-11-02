@@ -1091,18 +1091,21 @@ async function editInventoryItem(itemId) {
         input: 'number',
         inputLabel: 'Enter new quantity',
         inputValue: item.quantity,
+        inputAttributes: { min: '0', step: '1' },
+        inputValidator: value => Database.parseStockQuantity(value) === null ? 'Enter a whole number, 0 or more.' : undefined,
         showCancelButton: true,
         confirmButtonColor: '#3085d6',
         cancelButtonColor: '#d33',
         confirmButtonText: 'Update'
     });
     
-    if (newQuantity !== null && !isNaN(newQuantity)) {
+    const quantity = Database.parseStockQuantity(newQuantity);
+    if (quantity !== null) {
         await Database.updateInventoryItem(itemId, { 
-            quantity: parseInt(newQuantity),
+            quantity,
             last_updated: new Date().toISOString().split('T')[0]
         });
-        showToast(`${item.item_name} quantity updated to ${newQuantity}`, 'success');
+        showToast(`${item.item_name} quantity updated to ${quantity}`, 'success');
         await renderInventory();
     }
 }
@@ -1196,14 +1199,21 @@ function showAddInventoryModal() {
             return;
         }
         
+        const quantity = Database.parseStockQuantity(document.getElementById('inv-quantity').value);
+        const minStock = Database.parseStockQuantity(document.getElementById('inv-min-stock').value);
+        if (quantity === null || minStock === null) {
+            showToast('Quantity and minimum stock must be whole numbers, 0 or more', 'error');
+            return;
+        }
+
         const newItem = {
             item_number: itemNumber,
             item_name: itemName,
             category: document.getElementById('inv-category').value,
             item_type: document.getElementById('inv-item-type').value,
-            quantity: parseInt(document.getElementById('inv-quantity').value),
+            quantity,
             unit: document.getElementById('inv-unit').value,
-            min_stock: parseInt(document.getElementById('inv-min-stock').value),
+            min_stock: minStock,
             location: document.getElementById('inv-location').value,
             status: 'available',
             last_updated: new Date().toISOString().split('T')[0]
