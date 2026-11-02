@@ -245,3 +245,14 @@ test('item numbers are compared without case or outer spaces', () => {
   assert.equal(db.hasItemNumber(inventory, ' tec-022 '), true);
   assert.equal(db.hasItemNumber(inventory, 'TEC-023'), false);
 });
+
+test('deleting an item with borrow history says that history is the reason', async () => {
+  const { db } = load();
+  let reply = { error: { code: '23503' } };
+  db.supabase.from = () => ({ delete: () => ({ eq: async () => reply }) });
+  assert.equal(await db.deleteInventoryItem(1), false);
+  assert.equal(db.deleteBlockedByHistory, true);
+  reply = { error: null };
+  assert.equal(await db.deleteInventoryItem(2), true);
+  assert.equal(db.deleteBlockedByHistory, false);
+});

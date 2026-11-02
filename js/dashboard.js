@@ -1142,7 +1142,7 @@ async function deleteInventoryItem(itemId) {
     if (!result.isConfirmed) return;
     
     if (!await Database.deleteInventoryItem(itemId)) {
-        showToast('Could not delete the item. Please try again.', 'error');
+        showToast(Database.deleteBlockedByHistory ? 'This item has borrow history, so it cannot be deleted. Set its quantity to 0 instead.' : 'Could not delete the item. Please try again.', 'error');
         return;
     }
     showToast('Item deleted successfully', 'success');

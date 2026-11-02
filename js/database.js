@@ -412,6 +412,7 @@ const Database = {
     
     async deleteInventoryItem(itemId) {
         console.log('🗑️ Deleting inventory item:', itemId);
+        this.deleteBlockedByHistory = false;
         
         if (this.initialized && this.supabase) {
             try {
@@ -425,6 +426,7 @@ const Database = {
                     return true;
                 } else {
                     console.warn('Supabase delete error:', error);
+                    this.deleteBlockedByHistory = error.code === '23503';
                 }
             } catch (error) {
                 console.warn('Supabase delete exception:', error.message);
